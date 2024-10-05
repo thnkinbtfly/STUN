@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 
 @dataclass
 class Args:
-    model_path: str = field(default="/home/mltraining/Mixtral-8x7B-Instruct-v0.1")
+    model_path: str = field(default="Mixtral-8x7B-Instruct-v0.1")
     output_dir: str = field(default="Mixtral-7x7B")
     gate_template: str = field(default="model.layers.{}.block_sparse_moe.gate.weight")
     expert_template: str = field(
@@ -321,34 +321,22 @@ if __name__ == '__main__':
         if state_dict is None:
             state_dict, num_local_experts = merge_and_get_statedict_numexperts(args)
 
-    if not args.merge_method in [
-        'greedy_but_reject_mixed_coarse_rerank',
-        'greedy_but_reject_mixed_coarse_penalty',
-        'greedy_but_reject_mixed_rerank',
-        'greedy_but_reject_mixed_penalty',
-    ]:
-        setattr(config, args.expert_num_key_in_config, num_local_experts)
-        print('total experts : ', sum(num_local_experts))
+    setattr(config, args.expert_num_key_in_config, num_local_experts)
+    print('total experts : ', sum(num_local_experts))
 
-        pascal_case_model_name = ''.join(word.title() for word in args.snake_case_model_name.split('_'))
-        config.auto_map = {
-            "AutoConfig": f"configuration_{args.snake_case_model_name}.{pascal_case_model_name}Config",
-            "AutoModel": f"modeling_{args.snake_case_model_name}.{pascal_case_model_name}Model",
-            "AutoModelForCausalLM": f"modeling_{args.snake_case_model_name}.{pascal_case_model_name}ForCausalLM",
-        }
-        config.save_pretrained(args.output_dir)
-        shutil.copy(f'utils/configuration_{args.snake_case_model_name}.py', args.output_dir)
-        shutil.copy(f'utils/modeling_{args.snake_case_model_name}.py', args.output_dir)
+    pascal_case_model_name = ''.join(word.title() for word in args.snake_case_model_name.split('_'))
+    config.auto_map = {
+        "AutoConfig": f"configuration_{args.snake_case_model_name}.{pascal_case_model_name}Config",
+        "AutoModel": f"modeling_{args.snake_case_model_name}.{pascal_case_model_name}Model",
+        "AutoModelForCausalLM": f"modeling_{args.snake_case_model_name}.{pascal_case_model_name}ForCausalLM",
+    }
+    config.save_pretrained(args.output_dir)
+    shutil.copy(f'utils/configuration_{args.snake_case_model_name}.py', args.output_dir)
+    shutil.copy(f'utils/modeling_{args.snake_case_model_name}.py', args.output_dir)
 
-        torch.save(state_dict, os.path.join(args.output_dir, 'pytorch_model.bin'))
-        with open(os.path.join(args.output_dir, 'found'), 'w') as f:
-            f.write(f"{args.threshold}")
-    else:
-        setattr(config, args.expert_num_key_in_config, num_local_experts[0])
-        config.save_pretrained(args.output_dir)
-        torch.save(state_dict, os.path.join(args.output_dir, 'pytorch_model.bin'))
-        with open(os.path.join(args.output_dir, 'found'), 'w') as f:
-            f.write(f"{args.threshold}")
+    torch.save(state_dict, os.path.join(args.output_dir, 'pytorch_model.bin'))
+    with open(os.path.join(args.output_dir, 'found'), 'w') as f:
+        f.write(f"{args.threshold}")
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_path, trust_remote_code=True)
     tokenizer.save_pretrained(args.output_dir)

@@ -115,12 +115,12 @@ def parse_args():
     parser.add_argument(
         "--model_name_or_path",
         type=str,
-        default='../Mixtral-8x7B-Instruct-v0.1',
+        default='Mixtral-8x7B-Instruct-v0.1',
         help="Path to pretrained model or model identifier from huggingface.co/models.",
         required=False,
     )
     parser.add_argument("--output_dir", type=str,
-                        default='router_logits_mixtral22b',
+                        default='router_logits_mixtral',
                         help="Where to store the final model.")
     parser.add_argument(
         "--config_name",
@@ -875,35 +875,6 @@ def main():
             completed_steps = resume_step // args.gradient_accumulation_steps
             resume_step -= starting_epoch * len(train_dataloader)
 
-    # update the progress_bar if load from checkpoint
-    # progress_bar.update(completed_steps)
-
-
-
-    # with open(args.output_file, 'w') as f:
-    #     with torch.no_grad():
-    #         model.eval()
-    #         for step, batch in enumerate(train_dataloader):
-    #             progress_bar.update(1)
-    #             outputs = model(**batch, output_router_logits=True, return_dict=True)
-    #             router_logits = outputs['router_logits']
-    #             write_dict = {}
-    #             for layer_id, router_logit in enumerate(router_logits):
-    #                 router_softmax = torch.nn.functional.softmax(router_logit, dim=1)
-    #                 router_topk = torch.topk(router_softmax, 2, dim=1)
-    #                 router_topk_weights = router_topk.values
-    #                 router_topk = router_topk.indices
-    #                 count = collections.defaultdict(int)
-    #                 weights = collections.defaultdict(float)
-    #                 for r_topk, r_topk_w in zip(router_topk, router_topk_weights):
-    #                     for i, w in zip(r_topk, r_topk_w):
-    #                         count[i.item()] += 1
-    #                         weights[i.item()] += w.item()
-    #                 write_dict[f"router_topk_{layer_id}"] = count
-    #                 write_dict[f"router_topk_weights_{layer_id}"] = weights
-    #                 write_dict[f"router_softmax_{layer_id}"] = router_softmax.sum(0).tolist()
-    #             f.write(json.dumps(write_dict) + '\n')
-    #             f.flush()
 
 
 
@@ -927,26 +898,6 @@ def main():
             print(len(router_logits))
             print(router_logits[0].shape)
             torch.save(router_logits, os.path.join(args.output_dir, f"router_logits_{step:04d}.pt"))
-
-
-            # write_dict = {}
-            # for layer_id, router_logit in enumerate(router_logits):
-            #     router_softmax = torch.nn.functional.softmax(router_logit, dim=1)
-            #     router_topk = torch.topk(router_softmax, 2, dim=1)
-            #     router_topk_weights = router_topk.values
-            #     router_topk = router_topk.indices
-            #     count = collections.defaultdict(int)
-            #     weights = collections.defaultdict(float)
-            #     for r_topk, r_topk_w in zip(router_topk, router_topk_weights):
-            #         for i, w in zip(r_topk, r_topk_w):
-            #             count[i.item()] += 1
-            #             weights[i.item()] += w.item()
-            #     write_dict[f"router_topk_{layer_id}"] = count
-            #     write_dict[f"router_topk_weights_{layer_id}"] = weights
-            #     write_dict[f"router_softmax_{layer_id}"] = router_softmax.sum(0).tolist()
-            # f.write(json.dumps(write_dict) + '\n')
-            # f.flush()
-            #
 
 if __name__ == "__main__":
     main()
